@@ -120,3 +120,15 @@ services:
       POSTGRES_DB: payment_db
       POSTGRES_USER: payment
       POSTGRES_PASSWORD: payment
+
+gateway:
+  build: ./gateway
+  container_name: api-gateway
+  ports:
+    - "8080:80"
+  depends_on:
+    - user-service
+    - product-service
+    - order-service
+    - inventory-service
+    - payment-service
