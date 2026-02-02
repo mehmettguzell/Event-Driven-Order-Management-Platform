@@ -3,13 +3,21 @@ version: "3.9"
 services:
   user-service:
     build: ./services/user-service
+    container_name: user-service
     ports:
       - "8001:8000"
     depends_on:
       - user-db
+    environment:
+      DB_NAME: user_db
+      DB_USER: user
+      DB_PASSWORD: user
+      DB_HOST: user-db
+      DB_PORT: 5432
 
   user-db:
     image: postgres:15
+    container_name: user-db
     ports:
       - "5433:5432"
     environment:
@@ -19,13 +27,23 @@ services:
 
   product-service:
     build: ./services/product-service
+    container_name: product-service
     ports:
       - "8002:8000"
     depends_on:
       - product-db
+    environment:
+      DB_NAME: product_db
+      DB_USER: product
+      DB_PASSWORD: product
+      DB_HOST: product-db
+      DB_PORT: 5432
 
   product-db:
     image: postgres:15
+    container_name: product-db
+    ports:
+      - "5434:5432"
     environment:
       POSTGRES_DB: product_db
       POSTGRES_USER: product
@@ -33,13 +51,23 @@ services:
 
   order-service:
     build: ./services/order-service
+    container_name: order-service
     ports:
       - "8003:8000"
     depends_on:
       - order-db
+    environment:
+      DB_NAME: order_db
+      DB_USER: order
+      DB_PASSWORD: order
+      DB_HOST: order-db
+      DB_PORT: 5432
 
   order-db:
     image: postgres:15
+    container_name: order-db
+    ports:
+      - "5435:5432"
     environment:
       POSTGRES_DB: order_db
       POSTGRES_USER: order
@@ -47,13 +75,23 @@ services:
 
   inventory-service:
     build: ./services/inventory-service
+    container_name: inventory-service
     ports:
       - "8004:8000"
     depends_on:
       - inventory-db
+    environment:
+      DB_NAME: inventory_db
+      DB_USER: inventory
+      DB_PASSWORD: inventory
+      DB_HOST: inventory-db
+      DB_PORT: 5432
 
   inventory-db:
     image: postgres:15
+    container_name: inventory-db
+    ports:
+      - "5436:5432"
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: inventory
@@ -61,13 +99,23 @@ services:
 
   payment-service:
     build: ./services/payment-service
+    container_name: payment-service
     ports:
       - "8005:8000"
     depends_on:
       - payment-db
+    environment:
+      DB_NAME: payment_db
+      DB_USER: payment
+      DB_PASSWORD: payment
+      DB_HOST: payment-db
+      DB_PORT: 5432
 
   payment-db:
     image: postgres:15
+    container_name: payment-db
+    ports:
+      - "5437:5432"
     environment:
       POSTGRES_DB: payment_db
       POSTGRES_USER: payment
