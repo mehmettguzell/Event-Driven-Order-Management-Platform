@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - user-db
+
+  user-db:
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: user
+
+  product-service:
+    build: ./services/product-service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - product-db
+
+  product-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product
+      POSTGRES_PASSWORD: product
+
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - order-db
+
+  order-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order
+      POSTGRES_PASSWORD: order
+
+  inventory-service:
+    build: ./services/inventory-service
+    ports:
+      - "8004:8000"
+    depends_on:
+      - inventory-db
+
+  inventory-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+
+  payment-service:
+    build: ./services/payment-service
+    ports:
+      - "8005:8000"
+    depends_on:
+      - payment-db
+
+  payment-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: payment
