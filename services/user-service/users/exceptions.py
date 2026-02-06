@@ -11,3 +11,13 @@ class DomainException(Exception):
 class UserAlreadyExists(DomainException):
     code = "USER_ALREADY_EXISTS"
     message = "A user with this email already exists."
+
+
+class InvalidCredentials(DomainException):
+    code = "INVALID_CREDENTIALS"
+    message = "Invalid credentials."
+
+class UserInactive(DomainException):
+    code = "USER_INACTIVE"
+    message = "User account is inactive."
+

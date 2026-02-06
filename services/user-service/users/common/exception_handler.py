@@ -4,8 +4,15 @@ from rest_framework import status
 
 from users.exceptions import DomainException
 
+DOMAIN_EXCEPTION_STATUS_MAP = {
+    "INVALID_CREDENTIALS": status.HTTP_401_UNAUTHORIZED,
+    "USER_INACTIVE": status.HTTP_403_FORBIDDEN,
+}
+
+
 def custom_exception_handler(exc, context):
     if isinstance(exc, DomainException):
+        status_code = DOMAIN_EXCEPTION_STATUS_MAP.get(exc.code, status.HTTP_400_BAD_REQUEST)
         return Response(
             {
                 "success": False,
@@ -15,7 +22,7 @@ def custom_exception_handler(exc, context):
                     "message": exc.message
                 }
             },
-            status=status.HTTP_400_BAD_REQUEST
+            status=status_code
         )
 
     response = drf_exception_handler(exc, context)

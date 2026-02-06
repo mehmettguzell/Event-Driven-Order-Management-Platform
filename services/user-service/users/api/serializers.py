@@ -1,18 +1,12 @@
 from rest_framework import serializers
 
-class RegisterSerializer(serializers.Serializer):
+class AuthSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(
-        write_only=True, 
-        min_length=8
-    )
+    password = serializers.CharField(write_only=True, min_length=8)
+
     def validate_password(self, value):
-        if ' ' in value:
-            raise serializers.ValidationError(
-                "Password should not contain spaces."
-                )
+        if " " in value:
+            raise serializers.ValidationError("Password should not contain spaces.")
         if value.isdigit():
-            raise serializers.ValidationError(
-                "Password should not be entirely numeric."
-            )
+            raise serializers.ValidationError("Password should not be entirely numeric.")
         return value
