@@ -1,16 +1,24 @@
 from django.db import transaction
-from users.models import User
-from users.selectors import get_user_by_email
-from users.services.token_service import generate_tokens_for_user
+from django.core.cache import cache
 from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
-from users.exceptions import InvalidToken, UserAlreadyExists, InvalidCredentials, UserInactive
+from users.models import User
+from users.selectors import user_exists, get_user_by_email
+from users.services.token_service import (
+    generate_tokens_for_user,
+    blacklist_token,
+)
+from users.exceptions import (
+    UserAlreadyExists,
+    InvalidCredentials,
+    UserInactive,
+)
 
 
-def register_user(*, email: str, password: str):
-
-    if get_user_by_email(email):
+def register_user(*, email: str, password: str) -> dict:
+    email = email.lower().strip()
+    
+    if user_exists(email):
         raise UserAlreadyExists()
 
     with transaction.atomic():
@@ -18,6 +26,9 @@ def register_user(*, email: str, password: str):
             email=email,
             password=password,
         )
+        
+        cache.delete(f"user_email_{email}")
+        cache.delete(f"user_id_{user.id}")
 
     tokens = generate_tokens_for_user(user)
 
@@ -27,7 +38,10 @@ def register_user(*, email: str, password: str):
         "tokens": tokens,
     }
 
-def login_user(email, password):
+
+def login_user(*, email: str, password: str) -> dict:
+    email = email.lower().strip()
+    
     user = authenticate(username=email, password=password)
 
     if user is None:
@@ -44,19 +58,20 @@ def login_user(email, password):
         "tokens": tokens,
     }
 
-def logout_user(refresh_token):
-    try:
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-    except TokenError as exc:
-        raise InvalidToken(str(exc))
+
+def logout_user(*, refresh_token: str) -> dict:
+    blacklist_token(refresh_token)
     
-def user_profile(user):
-    data = {
+    return {
+        "message": "Logged out successfully.",
+    }
+
+
+def get_user_profile(*, user: User) -> dict:
+    return {
         "user_id": str(user.id),
         "email": user.email,
         "is_verified": getattr(user, "is_verified", False),
         "created_at": user.created_at,
         "updated_at": user.updated_at,
     }
-    return data
