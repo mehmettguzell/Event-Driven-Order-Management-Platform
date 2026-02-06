@@ -16,5 +16,3 @@ class RegisterSerializer(serializers.Serializer):
                 "Password should not be entirely numeric."
             )
         return value
-
-## EXCEPTION HANDLER YAZ

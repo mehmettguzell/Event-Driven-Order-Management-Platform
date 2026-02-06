@@ -1,0 +1,13 @@
+class DomainException(Exception):
+    code = "DOMAIN_ERROR"
+    message = "A domain error occurred."
+
+    def __init__(self, message=None):
+        if message:
+            self.message = message
+        super().__init__(self.message)
+
+
+class UserAlreadyExists(DomainException):
+    code = "USER_ALREADY_EXISTS"
+    message = "A user with this email already exists."
