@@ -14,11 +14,9 @@ class AuthSerializer(serializers.Serializer):
 
 
 class RefreshTokenSerializer(serializers.Serializer):
-
     refresh = serializers.CharField()
 
 
 class VerifyTokenSerializer(serializers.Serializer):
-
     token = serializers.CharField()
 

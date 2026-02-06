@@ -2,21 +2,19 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from users.api.serializers import (
     AuthSerializer,
     RefreshTokenSerializer,
-    VerifyTokenSerializer,
+    VerifyTokenSerializer
 )
+
 from users.common.responses import success_response
-from users.services.auth_service import login_user, register_user
+from users.services.auth_service import login_user, logout_user, register_user, user_profile
+from users.services.token_service import refresh_access_token, verify_token
 
 
 class RegisterView(APIView):
-
-
     def post(self, request):
         serializer = AuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -30,8 +28,6 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-
-
     def post(self, request):
         serializer = AuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -45,10 +41,15 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        serializer = RefreshTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data["refresh"]
+        logout_user(refresh_token)
+
         return Response(
             success_response({"message": "Logged out successfully."}),
             status=status.HTTP_200_OK,
@@ -56,21 +57,19 @@ class LogoutView(APIView):
 
 
 class RefreshTokenView(APIView):
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request):
         serializer = RefreshTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         refresh_token_str = serializer.validated_data["refresh"]
-
-        try:
-            refresh = RefreshToken(refresh_token_str)
-        except TokenError as exc:
-            raise InvalidToken(str(exc))
+        new_access_token = refresh_access_token(refresh_token_str)
 
         data = {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
+            "access": new_access_token,
+            "refresh": refresh_token_str,
         }
 
         return Response(
@@ -80,19 +79,11 @@ class RefreshTokenView(APIView):
 
 
 class UserProfileView(APIView):
-
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        data = {
-            "user_id": str(user.id),
-            "email": user.email,
-            "is_verified": getattr(user, "is_verified", False),
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        data = user_profile(user)
 
         return Response(
             success_response(data),
@@ -100,7 +91,9 @@ class UserProfileView(APIView):
         )
 
 
-class verifyTokenView(APIView):
+class VerifyTokenView(APIView):
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request):
         serializer = VerifyTokenSerializer(data=request.data)
@@ -108,13 +101,9 @@ class verifyTokenView(APIView):
 
         token_str = serializer.validated_data["token"]
 
-        try:
-            AccessToken(token_str)
-        except TokenError as exc:
-            raise InvalidToken(str(exc))
+        verify_token(token_str)
 
         return Response(
             success_response({"valid": True}),
             status=status.HTTP_200_OK,
         )
-

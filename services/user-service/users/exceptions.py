@@ -7,11 +7,9 @@ class DomainException(Exception):
             self.message = message
         super().__init__(self.message)
 
-
 class UserAlreadyExists(DomainException):
     code = "USER_ALREADY_EXISTS"
     message = "A user with this email already exists."
-
 
 class InvalidCredentials(DomainException):
     code = "INVALID_CREDENTIALS"
@@ -21,3 +19,6 @@ class UserInactive(DomainException):
     code = "USER_INACTIVE"
     message = "User account is inactive."
 
+class InvalidToken(DomainException):
+    code = "INVALID_TOKEN"
+    message = "Token is invalid or expired."
