@@ -27,7 +27,7 @@ def register_user(*, email: str, password: str):
     }
 
 def login_user(email, password):
-    user = authenticate(email=email, password=password)
+    user = authenticate(username=email, password=password)
 
     if user is None:
         raise InvalidCredentials()
