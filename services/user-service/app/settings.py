@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-SECRET_KEY = 'django-insecure-4b!&w@8&pz^=-3d0h6!0@2+uvoc9uv3s5=8)7nm0ljvpyerr9c'
+SECRET_KEY = "django-insecure-4b!&w@8&pz^=-3d0h6!0@2+uvoc9uv3s5=8)7nm0ljvpyerr9c"
 
 DEBUG = True
 
@@ -58,6 +59,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT signing key - shared with product-service for token validation
+_JWT_SIGNING_KEY = SECRET_KEY
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -66,7 +70,7 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": _JWT_SIGNING_KEY,
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "JTI_CLAIM": "jti",

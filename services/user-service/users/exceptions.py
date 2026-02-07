@@ -41,6 +41,7 @@ class TokenBlacklisted(DomainException):
     status_code = 401
 
 
+class WeakPassword(DomainException):
     code = "WEAK_PASSWORD"
     message = "Password does not meet security requirements."
     status_code = 400

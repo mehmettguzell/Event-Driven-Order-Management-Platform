@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -71,6 +72,8 @@ class ProductDetailView(APIView):
 
 
 class ProductCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request: Request):
         serializer = ProductCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -87,6 +90,8 @@ class ProductCreateView(APIView):
 
 
 class ProductUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def put(self, request, product_id):
         serializer = ProductUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -102,4 +107,3 @@ class ProductUpdateView(APIView):
             success_response(response_serializer.data),
             status=status.HTTP_200_OK,
         )
-
