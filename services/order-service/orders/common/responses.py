@@ -1,6 +1,3 @@
-from rest_framework.pagination import PageNumberPagination
-
-
 def success_response(data):
     return {
         "success": True,

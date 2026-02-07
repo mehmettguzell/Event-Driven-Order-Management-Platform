@@ -21,9 +21,9 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 REST_FRAMEWORK = {
-    "EXCEPTION_HANDLER": "products.common.exception_handler.custom_exception_handler",
+    "EXCEPTION_HANDLER": "orders.common.exception_handler.custom_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "products.common.jwt_auth.StatelessJWTAuthentication",
+        "orders.common.jwt_auth.StatelessJWTAuthentication",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,

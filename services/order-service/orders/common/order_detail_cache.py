@@ -12,7 +12,7 @@ def get(order_id: str) -> dict | None:
 
 
 def set(order_id: str, data: dict) -> None:
-    return cache.set(_key(order_id), data , CACHE_TIMEOUT)
+    cache.set(_key(order_id), data, CACHE_TIMEOUT)
 
 
 def delete(order_id : str) -> None:

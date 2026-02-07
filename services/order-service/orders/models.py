@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 
+
 class Order(models.Model):
     class Status(models.TextChoices):
         CREATED = "CREATED"
@@ -9,7 +10,7 @@ class Order(models.Model):
         CANCELLED = "CANCELLED"
         FAILED = "FAILED"
 
-    id = models.AutoField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     user_id = models.UUIDField()
 
@@ -24,12 +25,16 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.id} - {self.status}"
-    
+  
+   
 class OrderItem(models.Model):
-    id = models.AutoField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    order_id = models.UUIDField
-
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items",
+        db_column="order_id",
+    )
     product_id = models.UUIDField()
     product_sku = models.CharField(max_length=50)
 
