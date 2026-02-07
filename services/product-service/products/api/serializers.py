@@ -29,14 +29,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         ]
     
     def validate_sku(self, value):
-        if Product.objects.filter(sku__iexact=value).exists():
-            raise serializers.ValidationError("A product with this SKU already exists.")
-        return value.upper()
-    
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Price must be greater than zero.")
-        return value
+        return value.upper() if value else value
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -48,8 +41,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             "price",
             "is_active",
         ]
-    
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Price must be greater than zero.")
-        return value
+        def validate(self, attrs):
+            if not attrs:
+                raise serializers.ValidationError("At least one field must be provided.")
