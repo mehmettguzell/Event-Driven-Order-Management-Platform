@@ -27,7 +27,7 @@ class ProductPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class ProductView(APIView):
+class ProductsView(APIView):
     pagination_class = ProductPagination
 
     def get(self, request : Request):
