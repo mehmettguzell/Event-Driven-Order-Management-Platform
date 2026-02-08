@@ -1,8 +1,11 @@
 import logging
 import uuid
 
+from payments.api.serializers import PaymentSerializer
+from payments.common.payment_detail_cache import set_cache as set_payment_cache, get_cache as get_payment_cache, delete_cache
 from payments.messaging.publisher import publish_payment_authorized, publish_payment_failed
 from payments.models import Payment
+from payments.selectors import get_payment_by_order_id
 
 logger = logging.getLogger(__name__)
 
@@ -38,4 +41,23 @@ def process_order_created(payload: dict) -> None:
     publish_payment_authorized(order_id, ref)
 
 
+def get_payment_service(order_id: str):
+    cached = get_payment_cache(order_id)
+    if cached is not None:
+        return cached
 
+    payment = get_payment_by_order_id(order_id)
+    if not payment:
+        raise PaymentNotFound() 
+
+    data = PaymentSerializer(payment).data
+    set_payment_cache(order_id, data)
+    return data
+
+
+def get_order_payments_by_order_id(order_id: str):
+    qs = Payment.objects.all().order_by("-created_at")
+    
+    if order_id:
+        qs = qs.filter(order_id=order_id)    
+    return PaymentSerializer(qs[:50], many=True)
