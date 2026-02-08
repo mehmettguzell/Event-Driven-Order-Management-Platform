@@ -1,8 +1,3 @@
-"""
-Handle OrderCreated: create Payment record, simulate charge, publish PaymentAuthorized or PaymentFailed.
-Demo: fail if total_amount > 10000 (simulate decline), else success.
-"""
-
 import logging
 import uuid
 
@@ -41,3 +36,6 @@ def process_order_created(payload: dict) -> None:
     payment.transaction_reference = ref
     payment.save(update_fields=["status", "transaction_reference"])
     publish_payment_authorized(order_id, ref)
+
+
+

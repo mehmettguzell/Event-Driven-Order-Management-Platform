@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Payment(models.Model):
-    """Sipariş ödeme kaydı: OrderCreated event sonrası oluşturulur."""
 
     class Status(models.TextChoices):
         PENDING = "PENDING"
