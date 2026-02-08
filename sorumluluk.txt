@@ -1,9 +1,0 @@
-Bu sistem ne yapıyor?
-
-Bounded contextler : 
-
-- Kullanıcı var = users
-- Ürün var = products
-- Sipariş var = orders
-- Stok var = inventory
-- Ödeme var (mock) = payments

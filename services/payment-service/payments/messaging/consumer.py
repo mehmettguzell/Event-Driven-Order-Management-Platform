@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sys
+import django
 
 import pika
 
@@ -34,7 +35,7 @@ def _get_connection_params():
 def _on_message(channel, method, properties, body):
     try:
         payload = json.loads(body)
-        process_order_created(payload)
+        process_order_created(payload) #
     except Exception as e:
         logger.exception("Error processing order.created: %s", e)
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
@@ -43,31 +44,36 @@ def _on_message(channel, method, properties, body):
 
 
 def run_consumer():
-    import django
     django.setup()
 
     while True:
         try:
             conn = pika.BlockingConnection(_get_connection_params())
             channel = conn.channel()
+
             channel.exchange_declare(exchange=EXCHANGE, exchange_type="topic", durable=True)
             channel.queue_declare(queue=QUEUE_PAYMENT_ORDER_CREATED, durable=True)
+            
             channel.queue_bind(
                 exchange=EXCHANGE,
                 queue=QUEUE_PAYMENT_ORDER_CREATED,
                 routing_key=ROUTING_ORDER_CREATED,
             )
+
             channel.basic_qos(prefetch_count=1)
+
             channel.basic_consume(
                 queue=QUEUE_PAYMENT_ORDER_CREATED,
                 on_message_callback=_on_message,
             )
+
             logger.info(
                 "Consuming queue=%s routing_key=%s",
                 QUEUE_PAYMENT_ORDER_CREATED,
                 ROUTING_ORDER_CREATED,
             )
             channel.start_consuming()
+
         except pika.exceptions.AMQPConnectionError as e:
             logger.warning("RabbitMQ connection failed, retrying: %s", e)
             continue

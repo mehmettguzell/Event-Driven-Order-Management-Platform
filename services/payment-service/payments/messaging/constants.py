@@ -1,5 +1,3 @@
-"""RabbitMQ exchange and routing keys."""
-
 EXCHANGE = "events"
 
 ROUTING_ORDER_CREATED = "order.created"

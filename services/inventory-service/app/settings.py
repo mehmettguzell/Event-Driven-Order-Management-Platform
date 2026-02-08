@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "orders.common.jwt_auth.StatelessJWTAuthentication",
+        "inventory.common.jwt_auth.StatelessJWTAuthentication",
     ),
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],

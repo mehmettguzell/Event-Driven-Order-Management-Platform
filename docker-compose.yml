@@ -1,17 +1,17 @@
 version: "3.9"
 
 services:
-  # gateway:
-  #   build: ./gateway
-  #   container_name: api-gateway
-  #   ports:
-  #     - "8080:80"
-  #   depends_on:
-  #     - user-service
-  #     - product-service
-  #     - order-service
-  #     - inventory-service
-  #     - payment-service
+  gateway:
+    build: ./gateway
+    container_name: api-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - inventory-service
+      - payment-service
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -23,6 +23,7 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
+  ### USER
   user-service:
     build: ./services/user-service
     container_name: user-service
@@ -47,6 +48,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: user
 
+  ### PRODUCT
   product-service:
     build: ./services/product-service
     container_name: product-service
@@ -71,6 +73,7 @@ services:
       POSTGRES_USER: product
       POSTGRES_PASSWORD: product
 
+  ### ORDER
   order-service:
     build: ./services/order-service
     container_name: order-service
@@ -118,6 +121,7 @@ services:
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
 
+  ### INVENTORY
   inventory-service:
     build: ./services/inventory-service
     container_name: inventory-service
@@ -165,6 +169,7 @@ services:
       RABBITMQ_USER: guest
       RABBITMQ_PASSWORD: guest
 
+  ### PAYMENT
   payment-service:
     build: ./services/payment-service
     container_name: payment-service
