@@ -16,7 +16,7 @@
 | **Mesaj kuyruğu**    | RabbitMQ (topic exchange, event isimlerine göre queue yönlendirme) |
 | **Kimlik doğrulama** | JWT (SimpleJWT), stateless auth                                    |
 | **Cache**            | In-memory (geliştirme); production için Redis’e geçilebilir        |
-| **Orkestrasyon**     | Docker Compose (servisler + consumer’lar + RabbitMQ)               |
+| **Container Yönetimi**     | Docker Compose (servisler + consumer’lar + RabbitMQ)               |
 
 **Servisler:** user-service, product-service, order-service, inventory-service, payment-service. Her servis kendi veritabanına sahip; iletişim REST (senkron) ve event (asenkron) ile yapılır.
 
