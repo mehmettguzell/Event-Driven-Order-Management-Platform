@@ -1,5 +1,3 @@
-"""Consume inventory.stock_failed and payment.failed; cancel order and invalidate cache."""
-
 import json
 import logging
 import os
@@ -36,14 +34,17 @@ def _on_message(channel, method, properties, body):
     try:
         payload = json.loads(body)
         order_id = payload.get("order_id")
+
         if not order_id:
             logger.warning("Message missing order_id: %s", payload)
             channel.basic_ack(delivery_tag=method.delivery_tag)
             return
+        
         if cancel_order_by_id(order_id):
             logger.info("Cancelled order_id=%s (routing_key=%s)", order_id, method.routing_key)
         else:
             logger.debug("Order %s already cancelled or not found", order_id)
+            
     except Exception as e:
         logger.exception("Error processing message: %s", e)
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
@@ -61,14 +62,19 @@ def run_consumer():
         try:
             conn = pika.BlockingConnection(_get_connection_params())
             channel = conn.channel()
+
             channel.exchange_declare(exchange=EXCHANGE, exchange_type="topic", durable=True)
             channel.queue_declare(queue=QUEUE_ORDER_FAILURES, durable=True)
+
             for rk in routing_keys:
                 channel.queue_bind(exchange=EXCHANGE, queue=QUEUE_ORDER_FAILURES, routing_key=rk)
+
             channel.basic_qos(prefetch_count=1)
             channel.basic_consume(queue=QUEUE_ORDER_FAILURES, on_message_callback=_on_message)
+
             logger.info("Consuming queue=%s routing_keys=%s", QUEUE_ORDER_FAILURES, routing_keys)
             channel.start_consuming()
+
         except pika.exceptions.AMQPConnectionError as e:
             logger.warning("RabbitMQ connection failed, retrying: %s", e)
             continue

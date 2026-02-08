@@ -19,6 +19,7 @@ def create_order(user_id: str, validated_data: dict[str, Any]) -> dict[str, Any]
         status=Order.Status.CREATED,
         total_amount=total_amount,
     )
+
     for item in items_data:
         OrderItem.objects.create(
             order=order,
@@ -35,7 +36,6 @@ def create_order(user_id: str, validated_data: dict[str, Any]) -> dict[str, Any]
 
 
 def cancel_order_by_id(order_id: str) -> bool:
-    """Set order status to CANCELLED (e.g. on StockFailed or PaymentFailed). Returns True if updated."""
     order = get_order_by_id(order_id)
     if not order or order.status == Order.Status.CANCELLED:
         return False
@@ -55,6 +55,7 @@ def get_order_detail(order_id: str) -> dict[str, Any]:
         raise OrderNotFound()
     
     return OrderDetailSerializer(order).data
+
 
 def get_user_orders(
         user_id: str,

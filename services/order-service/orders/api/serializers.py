@@ -19,7 +19,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-
 class OrderListSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -36,6 +35,7 @@ class OrderListSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderItemSerializer(serializers.Serializer):
+
     product_id = serializers.UUIDField()
     product_sku = serializers.CharField(max_length=50)
     quantity = serializers.IntegerField(min_value=1)
@@ -43,6 +43,7 @@ class CreateOrderItemSerializer(serializers.Serializer):
 
 
 class CreateOrderSerializer(serializers.Serializer):
+    
     total_amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     items = CreateOrderItemSerializer(many=True, required=False, default=list)
 
