@@ -3,7 +3,8 @@ from typing import Any
 from rest_framework.request import Request
 
 from orders.api.serializers import OrderDetailSerializer, OrderListSerializer
-from orders.common.order_detail_cache import get as get_detail_cache, set as set_detail_cache
+from orders.common.order_detail_cache import get as get_detail_cache, set as set_detail_cache, delete as delete_detail_cache
+from orders.messaging.publisher import publish_order_created
 from orders.exceptions import OrderNotFound
 from orders.models import Order, OrderItem
 from orders.selectors import get_all_orders_by_user_id, get_order_by_id
@@ -29,8 +30,19 @@ def create_order(user_id: str, validated_data: dict[str, Any]) -> dict[str, Any]
 
     data = OrderDetailSerializer(order).data
     set_detail_cache(str(order.id), data)
-    # publish_order_created(order)
+    publish_order_created(order)
     return data
+
+
+def cancel_order_by_id(order_id: str) -> bool:
+    """Set order status to CANCELLED (e.g. on StockFailed or PaymentFailed). Returns True if updated."""
+    order = get_order_by_id(order_id)
+    if not order or order.status == Order.Status.CANCELLED:
+        return False
+    order.status = Order.Status.CANCELLED
+    order.save(update_fields=["status"])
+    delete_detail_cache(order_id)
+    return True
 
 
 def get_order_detail(order_id: str) -> dict[str, Any]:

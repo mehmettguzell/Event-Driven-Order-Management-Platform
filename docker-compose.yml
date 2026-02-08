@@ -13,6 +13,16 @@ services:
   #     - inventory-service
   #     - payment-service
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
   user-service:
     build: ./services/user-service
     container_name: user-service
@@ -68,12 +78,17 @@ services:
       - "8003:8000"
     depends_on:
       - order-db
+      - rabbitmq
     environment:
       DB_NAME: order_db
       DB_USER: order
       DB_PASSWORD: order
       DB_HOST: order-db
       DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
 
   order-db:
     image: postgres:15
@@ -85,6 +100,24 @@ services:
       POSTGRES_USER: order
       POSTGRES_PASSWORD: order
 
+  order-consumer:
+    build: ./services/order-service
+    container_name: order-consumer
+    command: ["python", "manage.py", "consume_order_events"]
+    depends_on:
+      - order-db
+      - rabbitmq
+    environment:
+      DB_NAME: order_db
+      DB_USER: order
+      DB_PASSWORD: order
+      DB_HOST: order-db
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+
   inventory-service:
     build: ./services/inventory-service
     container_name: inventory-service
@@ -92,12 +125,17 @@ services:
       - "8004:8000"
     depends_on:
       - inventory-db
+      - rabbitmq
     environment:
       DB_NAME: inventory_db
       DB_USER: inventory
       DB_PASSWORD: inventory
       DB_HOST: inventory-db
       DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
 
   inventory-db:
     image: postgres:15
@@ -109,6 +147,24 @@ services:
       POSTGRES_USER: inventory
       POSTGRES_PASSWORD: inventory
 
+  inventory-consumer:
+    build: ./services/inventory-service
+    container_name: inventory-consumer
+    command: ["python", "manage.py", "consume_order_events"]
+    depends_on:
+      - inventory-db
+      - rabbitmq
+    environment:
+      DB_NAME: inventory_db
+      DB_USER: inventory
+      DB_PASSWORD: inventory
+      DB_HOST: inventory-db
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+
   payment-service:
     build: ./services/payment-service
     container_name: payment-service
@@ -116,12 +172,17 @@ services:
       - "8005:8000"
     depends_on:
       - payment-db
+      - rabbitmq
     environment:
       DB_NAME: payment_db
       DB_USER: payment
       DB_PASSWORD: payment
       DB_HOST: payment-db
       DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
 
   payment-db:
     image: postgres:15
@@ -132,3 +193,21 @@ services:
       POSTGRES_DB: payment_db
       POSTGRES_USER: payment
       POSTGRES_PASSWORD: payment
+
+  payment-consumer:
+    build: ./services/payment-service
+    container_name: payment-consumer
+    command: ["python", "manage.py", "consume_order_events"]
+    depends_on:
+      - payment-db
+      - rabbitmq
+    environment:
+      DB_NAME: payment_db
+      DB_USER: payment
+      DB_PASSWORD: payment
+      DB_HOST: payment-db
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
