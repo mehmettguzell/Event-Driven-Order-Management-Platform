@@ -161,14 +161,12 @@ Consumer’lar ayrı process/container’da çalışır: `python manage.py consu
 docker-compose up -d --build
 ```
 
-İlk seferde migration:
+Her servis için migration:
 
 ```bash
-docker-compose run user-service python manage.py migrate
-docker-compose run product-service python manage.py migrate
-docker-compose run order-service python manage.py migrate
-docker-compose run inventory-service python manage.py migrate
-docker-compose run payment-service python manage.py migrate
+docker exec -it <service-name> bash
+python manage.py makemigrations
+python manage.py migrate
 ```
 
 Stok eklemek için: `POST /inventory/` ile `product_id`, `product_sku`, `quantity` gönderin (product_id, product-service’teki ürün UUID’si olmalı).
