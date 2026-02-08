@@ -15,12 +15,13 @@ class PaymentByOrderView(APIView):
     def get(self, request:Request, order_id:str) -> Response:
         payment = get_payment_service(order_id)
         return Response(success_response(data=payment), status=status.HTTP_200_OK)
-        
+
 
 class PaymentListView(APIView):
-    permission_class = [IsAuthenticated]
+
+    permission_classes = [IsAuthenticated]
 
     def get(self, request:Request) -> Response: 
         order_id = request.query_params.get("order_id")
         serializer = get_order_payments_by_order_id(order_id)
-        return Response(success_response(serializer), status=status.HTTP_200_OK)
+        return Response(success_response(serializer.data), status=status.HTTP_200_OK)

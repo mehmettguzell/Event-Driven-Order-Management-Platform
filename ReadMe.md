@@ -1,8 +1,9 @@
 # Event-Driven Order Management Platform
 
-# TODO
-
-Sipariş oluşturma, stok yönetimi ve ödeme akışını kapsayan **mikroservis tabanlı** bir backend. REST API’ler senkron çalışır; stok ve ödeme işlemleri **event-driven** (RabbitMQ) ile asenkron yürütülür. Saga ve telafi (compensation) mantığı ile tutarlılık sağlanır.
+- Sipariş oluşturma, stok yönetimi ve ödeme süreçlerini kapsayan mikroservis tabanlı bir backend geliştirdim.
+- Bu projede;
+  - REST API’ler senkron çalışırken, stok ve ödeme akışları RabbitMQ üzerinden event-driven olarak asenkron yürütüldü.
+  - Tutarlılığı sağlayabilmek için Saga ve compensation (telafi) mekanizmaları uygulandı.
 
 ---
 
@@ -21,53 +22,124 @@ Sipariş oluşturma, stok yönetimi ve ödeme akışını kapsayan **mikroservis
 
 ---
 
+## API Gateway ve URL yapısı
+
+**Gateway** (Nginx) tek giriş noktasıdır; istekleri path’e göre ilgili servise iletir.
+
+| Kullanım              | Base URL                  | Açıklama                                                                                                 |
+| --------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Gateway üzerinden** | `http://localhost:8080`   | Tüm API’lere tek adres. Gateway container’ı `docker-compose` ile ayağa kalkar (port **8080**).           |
+| **Servise doğrudan**  | `http://localhost:<port>` | Geliştirme/debug: user **8001**, product **8002**, order **8003**, inventory **8004**, payment **8005**. |
+
+**Gateway routing (path → servis):**
+
+Tüm path’lerde **rate limit** uygulanır: **10 istek/saniye**, burst **20** (Nginx `limit_req_zone`).
+
+| Path prefix   | Servis            | Rate limit         |
+| ------------- | ----------------- | ------------------ |
+| `/users/`     | user-service      | 10 req/s, burst 20 |
+| `/products/`  | product-service   | 10 req/s, burst 20 |
+| `/orders/`    | order-service     | 10 req/s, burst 20 |
+| `/inventory/` | inventory-service | 10 req/s, burst 20 |
+| `/payments/`  | payment-service   | 10 req/s, burst 20 |
+
+Gateway kullanırken tüm endpoint’ler **`http://localhost:8080`** ile başlar (örn. `http://localhost:8080/users/register/`). Doğrudan servise giderken base **`http://localhost:<port>`** olur (örn. `http://localhost:8001/users/register/`).
+
+---
+
 ## API Endpoint’leri
 
-Tüm endpoint’ler JSON alır/verir. Portlar: user **8001**, product **8002**, order **8003**, inventory **8004**, payment **8005**.
+Tüm endpoint’ler JSON alır/verir. `<id>`, `<product_id>`, `<order_id>` UUID’dir.
 
-### User Service — `/users/`
+### User Service
 
-| Method | Endpoint                | Açıklama                                             |
-| ------ | ----------------------- | ---------------------------------------------------- |
-| POST   | `/users/register/`      | Kayıt (email, password); şifre hash’lenir, JWT döner |
-| POST   | `/users/login/`         | Giriş; access + refresh token                        |
-| POST   | `/users/refresh-token/` | Access token yenileme                                |
-| POST   | `/users/logout/`        | Çıkış (refresh token blacklist) — **JWT gerekli**    |
-| GET    | `/users/user-profile/`  | Mevcut kullanıcı bilgisi — **JWT gerekli**           |
-| POST   | `/users/verify-token/`  | Token doğrulama (diğer servisler için)               |
+**Base path:** `/users/`  
+**Tam URL (gateway):** `http://localhost:8080/users/...`  
+**Tam URL (direkt):** `http://localhost:8001/users/...`
 
-### Product Service — `/products/`
+| Method | Endpoint                | Query / body              | Açıklama                                    |
+| ------ | ----------------------- | ------------------------- | ------------------------------------------- |
+| POST   | `/users/register/`      | Body: `email`, `password` | Kayıt; şifre hash’lenir, JWT döner.         |
+| POST   | `/users/login/`         | Body: `email`, `password` | Giriş; access + refresh token.              |
+| POST   | `/users/refresh-token/` | Body: `refresh`           | Access token yenileme.                      |
+| POST   | `/users/logout/`        | Body: `refresh`           | Çıkış (refresh blacklist). **JWT gerekli.** |
+| GET    | `/users/user-profile/`  | —                         | Mevcut kullanıcı bilgisi. **JWT gerekli.**  |
+| POST   | `/users/verify-token/`  | Body: `token`             | Token doğrulama (diğer servisler için).     |
 
-| Method | Endpoint                 | Açıklama                                           |
-| ------ | ------------------------ | -------------------------------------------------- |
-| GET    | `/products/all/`         | Ürün listesi (pagination, cache)                   |
-| GET    | `/products/<id>/`        | Ürün detay (cache)                                 |
-| POST   | `/products/create/`      | Ürün oluştur — **JWT gerekli**                     |
-| PUT    | `/products/<id>/update/` | Ürün güncelle (cache invalidate) — **JWT gerekli** |
+### Product Service
 
-### Order Service — `/orders/`
+**Base path:** `/products/`  
+**Tam URL (gateway):** `http://localhost:8080/products/...`  
+**Tam URL (direkt):** `http://localhost:8002/products/...`
 
-| Method | Endpoint                | Açıklama                                                              |
-| ------ | ----------------------- | --------------------------------------------------------------------- |
-| POST   | `/orders/create-order/` | Sipariş oluştur; **order.created** event yayınlanır — **JWT gerekli** |
-| GET    | `/orders/`              | Kullanıcının siparişleri (pagination) — **JWT gerekli**               |
-| GET    | `/orders/<id>/`         | Sipariş detayı (cache) — **JWT gerekli**                              |
+| Method | Endpoint                 | Query / body                                                                           | Açıklama                                                     |
+| ------ | ------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| GET    | `/products/all/`         | `page`, `page_size`, `only_active`, `min_price`, `max_price`, `search`, `sku`, `order` | Ürün listesi (pagination + cache). Aşağıda query açıklaması. |
+| GET    | `/products/<id>/`        | —                                                                                      | Ürün detay (cache).                                          |
+| POST   | `/products/create/`      | Body: ürün alanları                                                                    | Ürün oluştur. **JWT gerekli.**                               |
+| PUT    | `/products/<id>/update/` | Body: güncellenecek alanlar                                                            | Ürün güncelle; cache invalidate. **JWT gerekli.**            |
 
-### Inventory Service — `/inventory/`
+**GET /products/all/ query parametreleri:**
 
-| Method | Endpoint                   | Açıklama                                        |
-| ------ | -------------------------- | ----------------------------------------------- |
-| GET    | `/inventory/`              | Tüm stok kayıtları                              |
-| POST   | `/inventory/`              | Stok ekle veya güncelle (product_id ile upsert) |
-| GET    | `/inventory/<product_id>/` | Ürüne göre stok                                 |
-| PUT    | `/inventory/<product_id>/` | Stok miktarı güncelle                           |
+| Parametre     | Tip    | Varsayılan    | Açıklama                                                                                  |
+| ------------- | ------ | ------------- | ----------------------------------------------------------------------------------------- |
+| `page`        | int    | 1             | Sayfa numarası.                                                                           |
+| `page_size`   | int    | 20, max 100   | Sayfa başına kayıt.                                                                       |
+| `only_active` | bool   | true          | Sadece aktif ürünler.                                                                     |
+| `min_price`   | float  | —             | Min fiyat.                                                                                |
+| `max_price`   | float  | —             | Max fiyat.                                                                                |
+| `search`      | string | —             | İsim/benzeri arama.                                                                       |
+| `sku`         | string | —             | SKU ile filtre.                                                                           |
+| `order`       | string | `-created_at` | Sıralama: `created_at`, `-created_at`, `price`, `-price`, `name`, `-name`, `sku`, `-sku`. |
 
-### Payment Service — `/payments/`
+### Order Service
 
-| Method | Endpoint                      | Açıklama                                         |
-| ------ | ----------------------------- | ------------------------------------------------ |
-| GET    | `/payments/`                  | Son ödemeler (opsiyonel `?order_id=` ile filtre) |
-| GET    | `/payments/order/<order_id>/` | Siparişe ait ödeme kaydı                         |
+**Base path:** `/orders/`  
+**Tam URL (gateway):** `http://localhost:8080/orders/...`  
+**Tam URL (direkt):** `http://localhost:8003/orders/...`
+
+| Method | Endpoint                | Query / body                    | Açıklama                                                              |
+| ------ | ----------------------- | ------------------------------- | --------------------------------------------------------------------- |
+| POST   | `/orders/create-order/` | Body: `total_amount`, `items[]` | Sipariş oluştur; **order.created** event yayınlanır. **JWT gerekli.** |
+| GET    | `/orders/all/`          | `page`, `page_size`             | Kullanıcının siparişleri (pagination). **JWT gerekli.**               |
+| GET    | `/orders/<id>/`         | —                               | Sipariş detayı (cache). **JWT gerekli.**                              |
+
+**GET /orders/all/ query parametreleri:**
+
+| Parametre   | Tip | Varsayılan  | Açıklama            |
+| ----------- | --- | ----------- | ------------------- |
+| `page`      | int | 1           | Sayfa numarası.     |
+| `page_size` | int | 20, max 100 | Sayfa başına kayıt. |
+
+### Inventory Service
+
+**Base path:** `/inventory/`  
+**Tam URL (gateway):** `http://localhost:8080/inventory/...`  
+**Tam URL (direkt):** `http://localhost:8004/inventory/...`
+
+| Method | Endpoint                   | Query / body                                  | Açıklama                                         |
+| ------ | -------------------------- | --------------------------------------------- | ------------------------------------------------ |
+| GET    | `/inventory/all`           | —                                             | Tüm stok kayıtları.                              |
+| POST   | `/inventory/create`        | Body: `product_id`, `product_sku`, `quantity` | Stok ekle veya güncelle (product_id ile upsert). |
+| GET    | `/inventory/<product_id>/` | —                                             | Ürüne göre stok.                                 |
+| PUT    | `/inventory/<product_id>/` | Body: `quantity`                              | Stok miktarı güncelle.                           |
+
+### Payment Service
+
+**Base path:** `/payments/`  
+**Tam URL (gateway):** `http://localhost:8080/payments/...`  
+**Tam URL (direkt):** `http://localhost:8005/payments/...`
+
+| Method | Endpoint                      | Query / body           | Açıklama                             |
+| ------ | ----------------------------- | ---------------------- | ------------------------------------ |
+| GET    | `/payments/all/`              | `order_id` (opsiyonel) | Son ödemeler; `order_id` ile filtre. |
+| GET    | `/payments/order/<order_id>/` | —                      | Siparişe ait ödeme kaydı.            |
+
+**GET /payments/all/ query parametreleri:**
+
+| Parametre  | Tip  | Açıklama                                |
+| ---------- | ---- | --------------------------------------- |
+| `order_id` | UUID | Sadece bu siparişe ait ödemeleri döner. |
 
 ---
 
@@ -131,4 +203,13 @@ Kod; test edilebilir, okunabilir ve sürdürülebilir olacak şekilde API / serv
 
 # Kazanımlar
 
-Bu proje; servis mimarisi, REST API, event-driven sistemler, cache, güvenlik ve veritabanı tasarımı konularında pratik deneyim göstermek için uygundur.
+Bu proje kapsamında:
+
+- Mikroservis mimarisi ve servisler arası iletişim
+- REST API tasarımı ve HTTP tabanlı senkron akışlar
+- RabbitMQ ile event-driven ve asenkron sistemler
+- Saga pattern ve compensation yaklaşımı ile distributed sistemlerde tutarlılık
+- API Gateway, rate limiting ve temel güvenlik önlemleri
+- Veritabanı modelleme ve servis bazlı veri izolasyonu
+
+konularında pratik yaparak, kendimi geliştirdim.

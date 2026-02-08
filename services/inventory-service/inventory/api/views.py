@@ -16,9 +16,8 @@ from inventory.services.inventory_service import (
     update_inventory_quantity,
 )
 
+class InventoryListView(APIView):
 
-class InventoryListCreateView(APIView):
-    
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
@@ -27,6 +26,10 @@ class InventoryListCreateView(APIView):
             success_response(data),
             status=status.HTTP_200_OK,
         )
+
+class InventoryListCreateView(APIView):
+    
+    permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
         serializer = CreateInventorySerializer(data=request.data)

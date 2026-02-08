@@ -11,7 +11,7 @@ class DomainException(Exception):
         super().__init__(self.message)
 
 
-class PaymentNotFound(ModuleNotFoundError):
+class PaymentNotFound(DomainException):
     code = "PAYMENT_NOT_FOUND"
     message = "Payment not found."
     status_code = 404
